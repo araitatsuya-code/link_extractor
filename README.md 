@@ -1,0 +1,207 @@
+# 🔗 Link Extractor - セットアップガイド
+
+WebサイトからリンクAを抽出し、差分検出を行うローカルアプリケーション
+
+## 📋 機能
+
+- ✅ Webサイトからリンクを自動抽出
+- ✅ 前回実行時との差分検出
+- ✅ 内部リンクのみフィルタリング
+- ✅ クエリパラメータ・アンカー除去
+- ✅ 抽出履歴の保存・管理
+- ✅ 複数フォーマットでのコピー機能
+- ✅ レスポンシブなWebUI
+
+## 🛠️ セットアップ手順
+
+### 1. 必要な環境
+
+- Python 3.7+
+- pip（Pythonパッケージマネージャー）
+
+### 2. ファイルの準備
+
+以下のファイルを同じディレクトリに保存してください：
+
+```
+link_extractor/
+├── app.py              # Pythonバックエンド
+├── link_extractor.html # Webフロントエンド
+├── requirements.txt    # Python依存関係
+└── README.md          # このファイル
+```
+
+### 3. requirements.txt
+
+```txt
+Flask==2.3.3
+Flask-CORS==4.0.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+```
+
+### 4. インストール手順
+
+#### Windows
+```cmd
+# 1. ディレクトリ作成・移動
+mkdir link_extractor
+cd link_extractor
+
+# 2. 仮想環境作成（推奨）
+python -m venv venv
+venv\Scripts\activate
+
+# 3. 依存関係インストール
+pip install Flask Flask-CORS requests beautifulsoup4 lxml
+
+# 4. アプリ起動
+python app.py
+```
+
+#### macOS/Linux
+```bash
+# 1. ディレクトリ作成・移動
+mkdir link_extractor
+cd link_extractor
+
+# 2. 仮想環境作成（推奨）
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. 依存関係インストール
+pip install Flask Flask-CORS requests beautifulsoup4 lxml
+
+# 4. アプリ起動
+python app.py
+```
+
+### 5. アクセス
+
+ブラウザで以下にアクセス：
+```
+http://localhost:5000
+```
+
+## 🎯 使い方
+
+### 基本的な使い方
+
+1. **URL入力**: 抽出したいWebサイトのURLを入力
+2. **オプション設定**: 
+   - 内部リンクのみ: 同じドメインのリンクのみ抽出
+   - アンカー除去: `#section` 部分を除去
+   - クエリパラメータ除去: `?param=value` 部分を除去
+3. **抽出開始**: 「リンク抽出開始」ボタンをクリック
+4. **結果確認**: タブで結果を確認・コピー
+
+### 差分検出
+
+- 同じURLを再度実行すると、前回との差分を自動検出
+- 新しいリンクは緑色でハイライト表示
+- 「新しいリンク」タブで新規追加分のみ確認可能
+
+### コピー機能
+
+「コピー用」タブで以下の形式でコピー可能：
+- **スペース区切り**: `URL1 URL2 URL3`
+- **改行区切り**: 各URLを改行で分割
+- **新規のみ**: 新しいリンクのみをコピー
+
+## 📁 データ保存
+
+- 履歴データ: `link_extractor_data/history.json`
+- 最新50件の抽出結果を自動保存
+- 「履歴クリア」で全データ削除可能
+
+## 🔧 API仕様
+
+### POST /api/extract
+リンク抽出API
+
+**リクエスト:**
+```json
+{
+  "url": "https://example.com",
+  "options": {
+    "internal_only": true,
+    "remove_query": true,
+    "remove_anchors": true
+  }
+}
+```
+
+**レスポンス:**
+```json
+{
+  "base_url": "https://example.com",
+  "all_links": ["url1", "url2", "..."],
+  "new_links": ["new_url1", "new_url2"],
+  "total_count": 50,
+  "new_count": 5,
+  "timestamp": "2025-01-03T12:00:00"
+}
+```
+
+### GET /api/history
+履歴取得API
+
+### DELETE /api/history
+履歴削除API
+
+## ⚠️ 注意事項
+
+### 制限事項
+- robots.txtを尊重してください
+- 過度なリクエストは避けてください
+- 一部のサイトはアクセス制限がある場合があります
+
+### トラブルシューティング
+
+**エラー: "Webページの取得に失敗しました"**
+- URLが正しいか確認
+- サイトがアクセス制限をしていないか確認
+- ネットワーク接続を確認
+
+**エラー: "モジュールが見つかりません"**
+- `pip install -r requirements.txt` で依存関係を再インストール
+- 仮想環境がアクティブになっているか確認
+
+**パフォーマンス問題**
+- 大きなサイトは時間がかかる場合があります
+- タイムアウト（30秒）を超える場合はエラーになります
+
+## 🔄 アップデート
+
+新しい機能や修正がある場合：
+1. 新しいファイルをダウンロード
+2. `link_extractor_data/` フォルダは保持（履歴データ）
+3. サーバーを再起動
+
+## 📞 サポート
+
+問題が発生した場合：
+1. エラーメッセージを確認
+2. ブラウザの開発者ツールでログを確認
+3. Python実行時のログを確認
+
+## 🎉 よくある使用例
+
+### CodeRabbit ドキュメント抽出
+```
+URL: https://docs.coderabbit.ai/
+オプション: 内部リンクのみ ✓, アンカー除去 ✓, クエリパラメータ除去 ✓
+```
+
+### GitHub Pages サイト
+```
+URL: https://username.github.io/project/
+オプション: 内部リンクのみ ✓
+```
+
+### 企業サイトのページ一覧
+```
+URL: https://company.com/
+オプション: 全てチェック
+```
