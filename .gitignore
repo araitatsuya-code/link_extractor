@@ -1,1 +1,25 @@
 .DS_Store
+
+# ユーザーデータ（履歴ファイル）
+link_extractor_data/
+
+# Python関連
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE関連
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS関連
+Thumbs.db
