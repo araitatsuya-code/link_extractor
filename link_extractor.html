@@ -396,8 +396,20 @@
         // ローカルストレージのキー
         const STORAGE_KEY = 'link_extractor_history';
 
-        // 履歴を読み込み
-        function loadHistory() {
+        // 履歴を読み込み（バックエンドAPIとローカルストレージの両方から）
+        async function loadHistory() {
+            try {
+                // まずバックエンドAPIから履歴を取得
+                const response = await fetch('/api/history');
+                if (response.ok) {
+                    const serverHistory = await response.json();
+                    return serverHistory;
+                }
+            } catch (error) {
+                console.log('サーバー履歴の取得に失敗、ローカル履歴を使用:', error);
+            }
+            
+            // フォールバック: ローカルストレージから取得
             try {
                 const history = localStorage.getItem(STORAGE_KEY);
                 return history ? JSON.parse(history) : [];
@@ -424,9 +436,9 @@
         }
 
         // 履歴表示
-        function displayHistory() {
+        async function displayHistory() {
             const historyList = document.getElementById('history-list');
-            const history = loadHistory();
+            const history = await loadHistory();
             
             if (history.length === 0) {
                 historyList.innerHTML = '<p>抽出履歴がありません</p>';
@@ -436,22 +448,39 @@
             historyList.innerHTML = history.map(item => `
                 <div class="history-item">
                     <div class="history-meta">
-                        <span class="history-url">${item.baseUrl}</span>
+                        <span class="history-url">${item.base_url || item.baseUrl}</span>
                         <span class="history-date">${new Date(item.timestamp).toLocaleString('ja-JP')}</span>
                     </div>
                     <div class="history-stats">
-                        全リンク: ${item.allLinks.length}件 | 新しいリンク: ${item.newLinks.length}件
+                        全リンク: ${(item.all_links || item.allLinks || []).length}件 | 新しいリンク: ${(item.new_links || item.newLinks || []).length}件
                     </div>
                 </div>
             `).join('');
         }
 
         // 履歴クリア
-        function clearHistory() {
+        async function clearHistory() {
             if (confirm('抽出履歴をすべて削除しますか？')) {
-                localStorage.removeItem(STORAGE_KEY);
-                displayHistory();
-                showStatus('履歴をクリアしました', 'success');
+                try {
+                    // バックエンドAPIで履歴クリア
+                    const response = await fetch('/api/history', {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        // ローカルストレージもクリア
+                        localStorage.removeItem(STORAGE_KEY);
+                        displayHistory();
+                        showStatus('履歴をクリアしました', 'success');
+                    } else {
+                        throw new Error('サーバーでの履歴クリアに失敗しました');
+                    }
+                } catch (error) {
+                    // フォールバック: ローカルストレージのみクリア
+                    localStorage.removeItem(STORAGE_KEY);
+                    displayHistory();
+                    showStatus('ローカル履歴をクリアしました', 'success');
+                }
             }
         }
 
@@ -484,7 +513,7 @@
             }
         }
 
-        // リンク抽出（CORS制限のため、プロキシサーバーまたは別の方法が必要）
+        // リンク抽出（バックエンドAPIを使用）
         async function extractLinks() {
             const urlInput = document.getElementById('url-input');
             const targetUrl = urlInput.value.trim();
@@ -503,80 +532,58 @@
             
             showStatus('リンクを抽出中...', 'loading');
             
+            // オプション設定を取得
+            const options = {
+                internal_only: document.getElementById('internal-only').checked,
+                remove_query: document.getElementById('remove-query').checked,
+                remove_anchors: document.getElementById('remove-anchors').checked
+            };
+            
             try {
-                // CORS制限があるため、実際の本番環境では以下のいずれかが必要：
-                // 1. CORSプロキシサーバー
-                // 2. ブラウザ拡張機能
-                // 3. Electronアプリ
-                // 4. サーバーサイドでの処理
-                
-                // デモ用のコード（実際には動作しない）
-                const response = await fetch(targetUrl, {
-                    mode: 'cors'
+                // バックエンドAPIを呼び出し
+                const response = await fetch('/api/extract', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: targetUrl,
+                        options: options
+                    })
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
                 }
                 
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                // リンクを抽出
-                const links = Array.from(doc.querySelectorAll('a[href]'))
-                    .map(link => link.href)
-                    .filter(href => href && href !== '#')
-                    .map(href => normalizeUrl(href, targetUrl))
-                    .filter(href => href !== null);
-                
-                // 内部リンクのみフィルター
-                let filteredLinks = links;
-                if (document.getElementById('internal-only').checked) {
-                    const targetDomain = new URL(targetUrl).hostname;
-                    filteredLinks = links.filter(link => {
-                        try {
-                            return new URL(link).hostname === targetDomain;
-                        } catch {
-                            return false;
-                        }
-                    });
-                }
-                
-                // 重複除去
-                const uniqueLinks = [...new Set(filteredLinks)];
-                
-                // 前回の結果と比較
-                const previousData = getPreviousData(targetUrl);
-                const newLinks = previousData ? 
-                    uniqueLinks.filter(link => !previousData.allLinks.includes(link)) : 
-                    uniqueLinks;
+                const data = await response.json();
                 
                 // 結果を保存
                 currentData = {
-                    allLinks: uniqueLinks,
-                    newLinks: newLinks,
-                    baseUrl: targetUrl,
-                    timestamp: new Date().toISOString()
+                    allLinks: data.all_links,
+                    newLinks: data.new_links,
+                    baseUrl: data.base_url,
+                    timestamp: data.timestamp
                 };
                 
                 saveHistory(currentData);
                 displayResults();
-                showStatus(`抽出完了: ${uniqueLinks.length}件のリンクを発見（新規: ${newLinks.length}件）`, 'success');
+                showStatus(`抽出完了: ${data.total_count}件のリンクを発見（新規: ${data.new_count}件）`, 'success');
                 
             } catch (error) {
                 console.error('抽出エラー:', error);
                 
-                // CORS エラーの場合のデモデータ
-                if (error.message.includes('CORS') || error.name === 'TypeError') {
-                    showStatus('CORS制限により実際の抽出はできません。デモデータを表示します。', 'error');
+                // バックエンドサーバーが起動していない場合のフォールバック
+                if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+                    showStatus('バックエンドサーバーに接続できません。サーバーが起動しているか確認してください。', 'error');
                     
-                    // デモデータを生成
+                    // デモデータを表示
                     const demoLinks = generateDemoData(targetUrl);
                     const previousData = getPreviousData(targetUrl);
                     const newLinks = previousData ? 
                         demoLinks.filter(link => !previousData.allLinks.includes(link)) : 
-                        demoLinks.slice(0, 5); // 最初の5件を新規として扱う
+                        demoLinks.slice(0, 5);
                     
                     currentData = {
                         allLinks: demoLinks,
@@ -616,9 +623,9 @@
         }
 
         // 前回のデータを取得
-        function getPreviousData(url) {
-            const history = loadHistory();
-            return history.find(item => item.baseUrl === url);
+        async function getPreviousData(url) {
+            const history = await loadHistory();
+            return history.find(item => (item.base_url || item.baseUrl) === url);
         }
 
         // 結果表示
