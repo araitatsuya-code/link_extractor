@@ -221,9 +221,21 @@ def health_check():
     })
 
 if __name__ == '__main__':
+    import sys
+    
+    # ポート番号を環境変数またはコマンドライン引数から取得
+    port = int(os.environ.get('PORT', 5000))
+    
+    # コマンドライン引数でポート指定をチェック
+    if len(sys.argv) > 1:
+        try:
+            port = int(sys.argv[1])
+        except ValueError:
+            print("無効なポート番号です。デフォルトの5000を使用します。")
+    
     print("Link Extractor Backend Server")
     print("=" * 40)
-    print("フロントエンド: http://localhost:5000")
+    print(f"フロントエンド: http://localhost:{port}")
     print("API エンドポイント:")
     print("  POST /api/extract - リンク抽出")
     print("  GET  /api/history - 履歴取得")
@@ -231,4 +243,16 @@ if __name__ == '__main__':
     print("  GET  /api/health - ヘルスチェック")
     print("=" * 40)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    try:
+        app.run(debug=True, host='0.0.0.0', port=port)
+    except OSError as e:
+        if "Address already in use" in str(e):
+            print(f"\n❌ ポート {port} は既に使用されています。")
+            print("\n解決方法:")
+            print("1. 別のポートで起動: python app.py 8000")
+            print("2. 環境変数で指定: PORT=8000 python app.py")
+            print("3. macOSの場合: システム設定 > 一般 > AirDrop & Handoff > AirPlay Receiver をオフ")
+            print("4. 使用中プロセス確認: lsof -i :5000")
+        else:
+            print(f"サーバー起動エラー: {e}")
+        sys.exit(1)
