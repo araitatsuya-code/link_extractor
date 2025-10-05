@@ -224,14 +224,14 @@ if __name__ == '__main__':
     import sys
     
     # ポート番号を環境変数またはコマンドライン引数から取得
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 8080))
     
     # コマンドライン引数でポート指定をチェック
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])
         except ValueError:
-            print("無効なポート番号です。デフォルトの5000を使用します。")
+            print("無効なポート番号です。デフォルトの8080を使用します。")
     
     print("Link Extractor Backend Server")
     print("=" * 40)
@@ -252,7 +252,7 @@ if __name__ == '__main__':
             print("1. 別のポートで起動: python app.py 8000")
             print("2. 環境変数で指定: PORT=8000 python app.py")
             print("3. macOSの場合: システム設定 > 一般 > AirDrop & Handoff > AirPlay Receiver をオフ")
-            print("4. 使用中プロセス確認: lsof -i :5000")
+            print(f"4. 使用中プロセス確認: lsof -i :{port}")
         else:
             print(f"サーバー起動エラー: {e}")
         sys.exit(1)

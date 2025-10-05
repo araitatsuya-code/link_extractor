@@ -14,69 +14,61 @@ WebサイトからリンクAを抽出し、差分検出を行うローカルア�
 
 ## 🛠️ セットアップ手順
 
-### 1. 必要な環境
+### 🚀 ワンコマンド起動（推奨）
+
+#### macOS/Linux
+```bash
+./start.sh
+```
+
+#### Windows
+```cmd
+start.bat
+```
+
+### 📋 必要な環境
 
 - Python 3.7+
 - pip（Pythonパッケージマネージャー）
 
-### 2. ファイルの準備
-
-以下のファイルを同じディレクトリに保存してください：
+### 📁 ファイル構成
 
 ```
 link_extractor/
 ├── app.py              # Pythonバックエンド
 ├── link_extractor.html # Webフロントエンド
 ├── requirements.txt    # Python依存関係
+├── start.sh           # macOS/Linux起動スクリプト
+├── start.bat          # Windows起動スクリプト
 └── README.md          # このファイル
 ```
 
-### 3. requirements.txt
-
-```txt
-Flask==2.3.3
-Flask-CORS==4.0.0
-requests==2.31.0
-beautifulsoup4==4.12.2
-lxml>=5.0.0
-```
-
-### 4. インストール手順
+### 🔧 手動セットアップ（必要に応じて）
 
 #### Windows
 ```cmd
-# 1. ディレクトリ作成・移動
-mkdir link_extractor
-cd link_extractor
-
-# 2. 仮想環境作成（推奨）
+# 1. 仮想環境作成
 python -m venv venv
 venv\Scripts\activate
 
-# 3. 依存関係インストール
+# 2. 依存関係インストール
 pip install -r requirements.txt
 
-# 4. アプリ起動
+# 3. アプリ起動
 python app.py
 ```
 
 #### macOS/Linux
 ```bash
-# 1. ディレクトリ作成・移動
-mkdir link_extractor
-cd link_extractor
-
-# 2. 仮想環境作成（推奨）
+# 1. 仮想環境作成
 python3 -m venv venv
 source venv/bin/activate
 
-# 3. pipアップグレード（推奨）
+# 2. 依存関係インストール
 pip install --upgrade pip
-
-# 4. 依存関係インストール
 pip install -r requirements.txt
 
-# 5. アプリ起動
+# 3. アプリ起動
 python app.py
 ```
 
@@ -84,7 +76,7 @@ python app.py
 
 ブラウザで以下にアクセス：
 ```
-http://localhost:5000
+http://localhost:8080
 ```
 
 ## 🎯 使い方
@@ -206,11 +198,10 @@ http://localhost:5000
 - 大きなサイトは時間がかかる場合があります
 - タイムアウト（30秒）を超える場合はエラーになります
 
-**ポート5000が使用中のエラー**
-- 別のポートで起動: `python app.py 8000`
-- 環境変数で指定: `PORT=8000 python app.py`
-- macOSの場合: システム設定 > 一般 > AirDrop & Handoff > AirPlay Receiver をオフ
-- 使用中プロセス確認: `lsof -i :5000`
+**ポートが使用中のエラー**
+- 別のポートで起動: `python app.py 9000`
+- 環境変数で指定: `PORT=9000 python app.py`
+- 使用中プロセス確認: `lsof -i :8080`
 
 ## 🔄 アップデート
 
